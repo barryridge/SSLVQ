@@ -1,0 +1,1391 @@
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) classdef CodebookModality < Modality
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)     % CODEBOOKMODALITY Summary of this class goes here
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)     %   Detailed explanation goes here
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)     
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)     properties
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %% ------- *** OBJECTS *** ----------------------------------------
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %******************************************************************
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %******************************************************************
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         % SOM Codebook
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %------------------
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % Ideally this would be an interface to a 'Codebook' object,
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % but it would be tricky to decouple all the somtoolbox stuff,
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % so for now, it will remain a somtoolbox struct...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         SOM = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %% ------- *** FUNCTION HANDLES *** -------------------------------
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %******************************************************************
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %******************************************************************
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % Handle to a method that finds the best-matching unit(s) (BMUs)
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % in the SOM codebook.
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         findbmus = [];
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         findbmus_static = [];
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         metric = [];
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)         metric_withmask = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         mex_metric_code = 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %% ------- *** PROPERTIES *** -------------------------------------
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %******************************************************************
+   236      barry 2010-03-10 19:41:35 +0100 (Wed, 10 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Current training step
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %-----------------------
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % Overall...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         t = 0;
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % A counter for the no. of timesteps we updated at...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         t_nonnull = 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)         % Codebook initialization method...
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)         %-----------
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)         InitMethod = [];
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)         
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         % Codebook node covariances initialization?...
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         %-----------
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         CovarianceInit = false;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Distances
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %-----------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Sample-to-SOM-node distances at current training step,
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % i.e. sum-squared distances...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Distances = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Auxiliary distances at current training step.
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % This is used to store distances calculated
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % outside of the modality object, i.e. distances related to other
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % modalities (e.g. cross-modal Hellinger distances) which are
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % subsequently used to make calculations inside the object.
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         AuxDists = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         nAuxDists = 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % A place to record running statistics about the auxiliary
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % distance...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         AuxDistStats = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Class labels
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %--------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         ClassLabels = [];
+   614      barry 2011-07-11 22:09:16 +0200 (Mon, 11 Jul 2011)         ClassProbs = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         nClasses = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % Best matching units (BMUs)...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %--------------------------------------
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % Number of BMUs we should look for...
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         nBMUs = 1;
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % BMUs for current timestep...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         BMUs = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Map activations over time
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %---------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Activations = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         % Covariance & Inverse covariance matrices for nodes...
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         % (Required by the SOMN algorithm)
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         %---------------------------
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         Cov = [];
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         CovInv = [];
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)         % Probabilities for each node...
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)         % (Required by the SOMN algorithm)
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)         %---------------------------
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)         Probabilities = [];
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)         
+   288      barry 2010-05-24 11:55:46 +0200 (Mon, 24 May 2010)         % Map activations over time
+   288      barry 2010-05-24 11:55:46 +0200 (Mon, 24 May 2010)         %---------------------------
+   288      barry 2010-05-24 11:55:46 +0200 (Mon, 24 May 2010)         AccuracyHist = [];
+   288      barry 2010-05-24 11:55:46 +0200 (Mon, 24 May 2010)         
+   292      barry 2010-05-28 20:30:12 +0200 (Fri, 28 May 2010)         % Mask statistics (RunningStat object)...
+   292      barry 2010-05-28 20:30:12 +0200 (Fri, 28 May 2010)         %---------------------------
+   292      barry 2010-05-28 20:30:12 +0200 (Fri, 28 May 2010)         MaskStats = [];
+   292      barry 2010-05-28 20:30:12 +0200 (Fri, 28 May 2010)         
+   295      barry 2010-05-31 21:45:43 +0200 (Mon, 31 May 2010)         % Class statistics (RunningStat object)...
+   295      barry 2010-05-31 21:45:43 +0200 (Mon, 31 May 2010)         %---------------------------
+   295      barry 2010-05-31 21:45:43 +0200 (Mon, 31 May 2010)         ClassStats = [];
+   295      barry 2010-05-31 21:45:43 +0200 (Mon, 31 May 2010)         
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)         % Node statistics (Cell array of RunningStat objects)...
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)         NodeStats = [];
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Clustering
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Clustering = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Recorded information over training time...
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % (if the record parameter is passed)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %-------------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         AuxDistsRecord = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         AuxDistMeanRecord = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         AuxDistStDRecord = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         GroundTruthRecord = [];
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         BMURecord = [];
+   247      barry 2010-03-24 21:32:42 +0100 (Wed, 24 Mar 2010)         ActivationsRecord = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)         %% SOM settings & state...
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)         %-------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Normalization struct...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)         NormStruct = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)         % Normalization method...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)         NormMethod = 'range';
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)         
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)         % Has the SOM been labeled?
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)         SOM_is_labeled = false;
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Structure...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Size = [10 10];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Lattice = 'hexa';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Shape = 'sheet';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         KNN_max_k = 20;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Feature dimensions...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         dim = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Neighborhood type...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Neigh = 'bubble';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Neighborhood radius...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         radius_type = 'linear';
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)         rini = 5;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         rfin = 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Training length...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         trainlen = 0;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Metric...
+   278      barry 2010-04-19 14:47:51 +0200 (Mon, 19 Apr 2010)         metric_type = 'euclidean';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)         % Feature selection feedback in training...
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)         feature_selection_feedback = false;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % Useful stuff...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Ud = []; % Distance between map units on the grid...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         CostMatrix = []; % Cost matrix for grid units...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         mu_x_1 = [];     % This is used pretty often...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         ZeroMask = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         OnesMask = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         Dx = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         % Current data sample...
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         x = [];
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         % Its known components...
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         known = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % Current alpha learning rate value...
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         a = 0.2;
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         % Current feature selection alpha learning rate value...
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         a_f = 0.2;
+   247      barry 2010-03-24 21:32:42 +0100 (Wed, 24 Mar 2010)         % Current window size for LVQ2.1-style algorithms...
+   247      barry 2010-03-24 21:32:42 +0100 (Wed, 24 Mar 2010)         epsilon = 0.3;
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         % Matrix of individual alphas for each codebook vector, used for
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         % optimized-learning rate algorithms...
+   245      barry 2010-03-23 17:27:43 +0100 (Tue, 23 Mar 2010)         Alphas = [];
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % Current radius...
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         r = 5;        
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         % Current neighbourhood...
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)         h = [];
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)         % Display updates...
+   501      barry 2011-02-28 21:27:25 +0100 (Mon, 28 Feb 2011)         verbose = false;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         % Use mex functions?
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         use_mex = false;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)     end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)     
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)     methods
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %% ------- *** CONSTRUCTOR *** ------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)         function obj = CodebookModality(Data, varargin)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             % Pass arguments to set() method...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj = obj.set(varargin{:});
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% GET NORMALIZATION STRUCT FROM ARGUMENT OR INITIAL DATA -----
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %--------------------------------------------------------------
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             if ~isfield(Data, 'NormedFeatureVectors')
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 % Temporary data struct...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 SOMDataTemp = som_data_struct(Data.FeatureVectors',...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                                               'comp_names', Data.FeatureNames');
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 % Normalize...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 % SOMDataTemp = som_normalize(SOMDataTemp, obj.NormMethod);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 % obj.NormStruct = SOMDataTemp.comp_norm;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 switch obj.NormMethod
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     case {'1', '2', '3', '4'}                                
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         SOMDataTemp.data = normalize(SOMDataTemp.data, str2num(obj.NormMethod));
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     otherwise
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         SOMDataTemp = som_normalize(SOMDataTemp, obj.NormMethod);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 % Create randomized SOM struct...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 obj.SOM = som_randinit(SOMDataTemp,...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                        'msize', obj.Size,...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                        'lattice', obj.Lattice,...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                        'shape', obj.Shape);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                    
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             else
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 % Create randomized SOM struct...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 obj.SOM = som_randinit(Data.NormedFeatureVectors',...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                        'msize', obj.Size,...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                        'lattice', obj.Lattice,...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                        'shape', obj.Shape);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010) 
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)             %% INITIALIZE CODEBOOK ----------------------------------------
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)             % The codebook may be initialized in different ways depending
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)             % on what argument was passed.  Certain LVQ algorithms (e.g.
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)             % GLVQ) are sensitive to codebook initialization; randomized
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)             % codebooks can cause such algorithms to fail catastrophically.
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             % Options:
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             % {'rand', 'random'}:
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %    Random initial codebook vector values.
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             % {'sample', 'rand_sample'}:
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %    Random samples from the training data.
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             % 'dist_sample':
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %    Each class in the training data is clustered,
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %    then codebook vectors for each class are sampled from
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %    the clusters.
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             % 'dist_mean':
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %    Each class in the training data is clustered,
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %    then codebook vectors for each class are assigned to the
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)             %    mean values of the clusters.
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)             %--------------------------------------------------------------
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)             switch lower(obj.InitMethod)
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                 
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 % Randomly initialize each dimension in the codebook...
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)                 case {'rand', 'random'}
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)                     % The codebook vectors have already been randomly
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                     % initialized from above, so we do nothing here.
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                                         
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                     if obj.CovarianceInit
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                             for iNode = 1:size(obj.SOM.codebook,1)                            
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                                 obj.Cov{iNode} = rand(size(obj.SOM.codebook,2),size(obj.SOM.codebook,2));
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                                 obj.CovInv{iNode} = rand(size(obj.SOM.codebook,2),size(obj.SOM.codebook,2));
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                             end
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                     end
+   376      barry 2010-12-01 20:06:33 +0100 (Wed, 01 Dec 2010)                 
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 % Randomly sample from the training data...
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 case {'sample', 'rand_sample'}
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                     
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     % If we need to initialize the covariance matrices for
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     % each node (i.e. we're using the SOMN algorithm or
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     % similar), then we subsample from the training data
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     % and take means and covariances from the subsamples...
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     if obj.CovarianceInit                        
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         NumSamples = size(Data.NormedFeatureVectors,2);
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)                         NumPatIni = 4*max([size(obj.SOM.codebook, 2) + 1,...
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                                              ceil(NumSamples / size(obj.SOM.codebook,1))]);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                                          
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         for iNode = 1:size(obj.SOM.codebook,1)                            
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                             
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                             MySamples = Data.NormedFeatureVectors(:,ceil(NumSamples*rand(1,NumPatIni)));
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                             
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                             obj.SOM.codebook(iNode,:) = mean(MySamples');
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                             obj.Cov{iNode} = cov(MySamples');
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                             obj.CovInv{iNode} = inv(obj.Cov{iNode});
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         end
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                     
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     % Otherwise, we just draw random samples from the data
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     % for the codebook...
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     else                        
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         NumSamples = size(Data.NormedFeatureVectors,2);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         for iNode = 1:size(obj.SOM.codebook,1)
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                             obj.SOM.codebook(iNode,:) = Data.NormedFeatureVectors(:,ceil(NumSamples*rand));
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         end
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     end
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 % Randomly sample from the ground truth classes in the
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 % training data...
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 case {'class_sample'}                    
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     % Set up class labels for the codebook nodes...
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     obj.ClassLabels = zeros(size(obj.SOM.codebook,1),1);
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     increment = floor(size(obj.SOM.codebook,1) / Data.nGroundTruths);
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     for j = 1:Data.nGroundTruths
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                         obj.ClassLabels( ((j-1) * increment) + 1 : max(j * increment, size(obj.SOM.codebook,1))) = j;                                       
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     end
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     % For each codebook node of each class, randomly
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     % sample a data vector...
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     for iNode = 1:size(obj.ClassLabels,1)
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                         ClassDataIndices = find(Data.ClassLabels(Data.GroundTruthLabelIndices(:,obj.ClassLabels(iNode)),:));
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                         iRandomClassSample = ceil(rand * size(find(Data.ClassLabels(Data.GroundTruthLabelIndices(:,obj.ClassLabels(iNode)),:)),2));
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                         iSample = ClassDataIndices(iRandomClassSample);
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                         obj.SOM.codebook(iNode,:) = Data.NormedFeatureVectors(:,iSample)';
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 % Cluster the data, then randomly sample from the
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 % clusters...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 case {'dist_sample', 'dist_mean'}
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                     
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     % Set up class labels for the codebook nodes...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     obj.ClassLabels = zeros(size(obj.SOM.codebook,1),1);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     increment = floor(size(obj.SOM.codebook,1) / Data.nGroundTruths);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     for j = 1:Data.nGroundTruths
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         obj.ClassLabels( ((j-1) * increment) + 1 : max(j * increment, size(obj.SOM.codebook,1))) = j;                                       
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     % For each cluster of each class, use randomly
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     % sampled data vectors to initialize codebook
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     % vectors...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     iNode = 1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     for iClass = 1:size(Data.GroundTruthLabelIndices,2)
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         % Grab the sample indices for this class...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         ClassDataIndices = find(Data.ClassLabels(Data.GroundTruthLabelIndices(:,iClass),:));
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         % Sometimes the clustering runs amok, so if an
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         % error is caught here, we redo the clustering...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         iRetry = 1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         reclustering_required = true;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         while reclustering_required
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                             
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                             try
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 % Cluster that data...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 ClassData = Data.NormedFeatureVectors(:,ClassDataIndices);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 [foo Centroids Indices Errors OptimalK KValidityInfo] = obj.cluster('data', ClassData');
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 % Check how many codebook vectors (nodes) we can
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 % assign to this class...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 nClassNodes = sum(obj.ClassLabels == iClass);                        
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 iClassNode = 1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 iCluster = 1;                       
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 % Loop assigning nodes to clusters in
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 % this class until we run out of class nodes...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 while iClassNode <= nClassNodes && iNode <= size(obj.ClassLabels,1)
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   329      barry 2010-09-03 18:42:57 +0200 (Fri, 03 Sep 2010)                                     ClusterData = ClassData(:,Indices{OptimalK} == iCluster);                                    
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     
+   329      barry 2010-09-03 18:42:57 +0200 (Fri, 03 Sep 2010)                                     if size(unique(Indices{OptimalK}),1) ~= OptimalK
+   329      barry 2010-09-03 18:42:57 +0200 (Fri, 03 Sep 2010)                                         error('Clustering failed.');
+   329      barry 2010-09-03 18:42:57 +0200 (Fri, 03 Sep 2010)                                     end
+   329      barry 2010-09-03 18:42:57 +0200 (Fri, 03 Sep 2010)                                     
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     switch lower(obj.InitMethod)
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                         case 'dist_sample'
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                             % Assign class codebook vectors based on the
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                             % cluster distribution...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                             obj.SOM.codebook(iNode,:) = ClusterData(:,ceil(rand * size(ClusterData,2)))';
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                             
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                         case 'dist_mean'
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                             obj.SOM.codebook(iNode,:) = mean(ClusterData,2);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     iNode = iNode + 1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     iClassNode = iClassNode + 1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     iCluster = iCluster + 1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     if iCluster > OptimalK
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                         iCluster = 1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 reclustering_required = false;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                             catch MyError
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 
+   329      barry 2010-09-03 18:42:57 +0200 (Fri, 03 Sep 2010)                                 if iRetry <= 10                                                                                
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     iRetry = iRetry + 1;                                    
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     reclustering_required = true;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 else
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     reclustering_required = false;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                     rethrow(MyError);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                                 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                             end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     end
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)             end
+   288      barry 2010-05-24 11:55:46 +0200 (Mon, 24 May 2010)              
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% SET UP -----------------------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %--------------------------------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % neighborhood radius
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.rini = max(obj.SOM.topol.msize)/2;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Useful stuff...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.Ud = som_unit_dists(obj.SOM.topol); % distance between map units on the grid
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.CostMatrix = ((obj.Ud+1).^2) / max(max((obj.Ud+1).^2));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             [munits obj.dim] = size(obj.SOM.codebook);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.mu_x_1 = ones(munits,1);     % this is used pretty often
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.ZeroMask = zeros(size(obj.SOM.mask));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.OnesMask = ones(size(obj.SOM.mask));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.KNN_max_k = min(obj.KNN_max_k, numel(obj.Size));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % initialize random number generator
+   261      barry 2010-03-31 01:42:53 +0200 (Wed, 31 Mar 2010)             % rand('twister',sum(100*clock));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   288      barry 2010-05-24 11:55:46 +0200 (Mon, 24 May 2010)             % Accuracy histogram initialization...
+   288      barry 2010-05-24 11:55:46 +0200 (Mon, 24 May 2010)             obj.AccuracyHist = zeros(size(obj.SOM.codebook,1),1);
+   288      barry 2010-05-24 11:55:46 +0200 (Mon, 24 May 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% CREATE AuxDistStats OBJECT from RunningStat CLASS ----------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %--------------------------------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.AuxDistStats = RunningStat();
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %% ------- *** SET PROPERTIES *** ---------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         function obj = set(obj, varargin)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             % Defaults...
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             Updaters{1} = '';
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Loop through arguments...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             i = 1;
+   239      barry 2010-03-14 14:33:45 +0100 (Sun, 14 Mar 2010)             iPassedArgs = 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             while i <= length(varargin), 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 argok = 1; 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 if ischar(varargin{i}), 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     switch lower(varargin{i}), 
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)                         case {'codebook_size', 'size'},...
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                                 i=i+1; obj.Size = varargin{i}; obj.rini = max(obj.Size)/2;
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)                         case {'codebook_lattice', 'lattice'}, i=i+1; obj.Lattice = varargin{i};
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)                         case {'codebook_shape', 'shape'}, i=i+1; obj.Shape = varargin{i};
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)                         case {'codebook_neigh', 'neigh'}, i=i+1; obj.Neigh = varargin{i};
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)                         case {'codebook_mask', 'mask'}, i=i+1; obj.SOM.mask = varargin{i};
+   291      barry 2010-05-27 21:27:37 +0200 (Thu, 27 May 2010)                         case {'codebook_init_method'}, i=i+1; obj.InitMethod = varargin{i};
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         case 'radius_type',  i=i+1; obj.radius_type = varargin{i};
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)                         case {'metric_type', 'metric'}, i=i+1; obj.metric_type = lower(varargin{i});                        
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         case 'trainlen', i=i+1; obj.trainlen = varargin{i};
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         case 'knn_max_k', i=i+1; obj.KNN_max_k = varargin{i};
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         case {'norm', 'comp_norm', 'normalization_struct'}, i=i+1; obj.NormStruct = varargin{i};
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         case {'normalization_method'}, i=i+1; obj.NormMethod = varargin{i};
+   238      barry 2010-03-14 02:55:39 +0100 (Sun, 14 Mar 2010)                         case 'nclasses', i=i+1; obj.nClasses = varargin{i};
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                         case {'featureselectionfeedback', 'feature_selection_feedback',...
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                               'featureselectionintraining', 'feature_selection_in_training'},...
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                                 i=i+1; obj.feature_selection_feedback = varargin{i};
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)                         case 'record', i=i+1; obj.record = varargin{i};
+   501      barry 2011-02-28 21:27:25 +0100 (Mon, 28 Feb 2011)                         case 'verbose', i=i+1; obj.verbose = varargin{i};
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                         case {'usemex', 'use_mex'}, i=i+1; obj.use_mex = varargin{i};
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                         case {'covariance_init', 'covariance_init_method'}, i=i+1; obj.CovarianceInit = varargin{i};
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                         case {'updaters'},
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                             Updaters = varargin{i+1};                            
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                             PassedArgs{iPassedArgs} = varargin{i};
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                             PassedArgs{iPassedArgs+1} = varargin{i+1};
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                             i = i + 1;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                             iPassedArgs = iPassedArgs + 2;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         otherwise
+   239      barry 2010-03-14 14:33:45 +0100 (Sun, 14 Mar 2010)                             PassedArgs{iPassedArgs} = varargin{i};
+   239      barry 2010-03-14 14:33:45 +0100 (Sun, 14 Mar 2010)                             PassedArgs{iPassedArgs+1} = varargin{i+1};
+   239      barry 2010-03-14 14:33:45 +0100 (Sun, 14 Mar 2010)                             i = i + 1;
+   239      barry 2010-03-14 14:33:45 +0100 (Sun, 14 Mar 2010)                             iPassedArgs = iPassedArgs + 2;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 else
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     argok = 0;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 if ~argok, 
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)                     disp(['CodebookModality.set(): Ignoring invalid argument #' num2str(i)]);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     fprintf(obj.UsageMessage);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 i = i + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             %% CREATE findbmus and metric HANDLES -------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %--------------------------------------------------------------
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)             if iscell(obj.metric_type)
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)                 metric_type = obj.metric_type{1};
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)             else
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)                 metric_type = obj.metric_type;
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)             end
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)             
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             % Do we want to use mex functions?
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             if obj.use_mex
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 % Set the findbmus function...
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 if obj.feature_selection_feedback
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                     obj.findbmus = @obj.findbmus_mex_wrapper;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 else
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                     obj.findbmus = @obj.findbmus_mex_wrapper_nomask;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 obj.findbmus_static = @obj.findbmus_mex_wrapper_static;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 % Set the metric type...
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 switch metric_type,
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                     case {'squared', 'sumsquared'},
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                         obj.mex_metric_code = 1;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                     case {'euclidean'},
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                         obj.mex_metric_code = 2;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                     otherwise
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                         obj.mex_metric_code = 1;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             else
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 % Set the findbmus function...
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 switch lower(Updaters{1})
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                     case 'somn'
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                         obj.findbmus = @obj.findbmus_somn_matlab;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                         obj.findbmus_static = @obj.findbmus_somn_matlab_static;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                     otherwise
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                         obj.findbmus = @obj.findbmus_matlab;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                         obj.findbmus_static = @obj.findbmus_matlab_static;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                 
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             % Set the metric type...
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)             switch metric_type,
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 case {'squared', 'sumsquared'},
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     if obj.feature_selection_feedback
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                         obj.metric = @obj.sumsquared_metric_withmask;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     else
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                         obj.metric = @obj.sumsquared_metric;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010) 
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)                     obj.metric_withmask = @obj.sumsquared_metric_withmask;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 case {'euclidean'},
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     if obj.feature_selection_feedback
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                         obj.metric = @obj.euclidean_metric_withmask;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     else
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                         obj.metric = @obj.euclidean_metric;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010) 
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)                     obj.metric_withmask = @obj.euclidean_metric_withmask;
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 otherwise
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     if obj.feature_selection_feedback
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                         obj.metric = @obj.sumsquared_metric_withmask;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     else
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)                         obj.metric = @obj.sumsquared_metric;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010) 
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)                     obj.metric_withmask = @obj.sumsquared_metric_withmask;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% CREATE ALGORITHM OBJECT ------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %--------------------------------------------------------------
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)             if exist('PassedArgs', 'var')
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)                 obj.Algo = obj.createAlgorithm('record', obj.record, PassedArgs{1:end});
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %% ------- *** TRAIN *** ------------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         function obj = train(obj, Data, varargin)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   786      barry 2012-08-17 12:42:31 +0200 (Fri, 17 Aug 2012)             obj.Algo.run(obj, Data, varargin{:});
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %% ------- *** CLASSIFY *** ---------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         function [Matches NormedFeatureVectors] = classify(obj, Data, varargin)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Defaults...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             wise = 'nodewise';
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)             Codebook = obj.SOM;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             Mask = [];
+   267      barry 2010-04-08 18:33:31 +0200 (Thu, 08 Apr 2010)             WhichBMUs = 'best';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Loop through arguments...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             i = 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             while i <= length(varargin), 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 argok = 1; 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 if ischar(varargin{i}), 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     switch lower(varargin{i}), 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         % argument IDs
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         case {'nodewise', 'node_wise'}, i=i+1; wise = 'nodewise';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         case {'clusterwise', 'cluster_wise'}, i=i+1; wise = 'clusterwise';
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                         case {'codebook'},  i=i+1; Codebook = varargin{i};
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                         case {'mask', 'featuremask', 'feature_mask'},  i=i+1; Mask = varargin{i};
+   267      barry 2010-04-08 18:33:31 +0200 (Thu, 08 Apr 2010)                         case {'whichbmus'},  i=i+1; WhichBMUs = varargin{i};
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         otherwise
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                             argok = 0;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 else
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     argok = 0;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 if ~argok, 
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)                     disp(['CodebookModality.classify(): Ignoring invalid argument #' num2str(i)]);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     fprintf(obj.UsageMessage);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 i = i + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% CONVERT & NORMALIZE TEST DATA ------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %--------------------------------------------------------------
+   268      barry 2010-04-09 20:38:15 +0200 (Fri, 09 Apr 2010)             if isstruct(Data)
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 if isfield(Data, 'NormedFeatureVectors')
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     SOMTestData = som_data_struct(Data.NormedFeatureVectors');
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 else                    
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     SOMTestData = som_data_struct(Data.FeatureVectors');
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     SOMTestData = som_normalize(SOMTestData, obj.NormStruct);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 end
+   268      barry 2010-04-09 20:38:15 +0200 (Fri, 09 Apr 2010)             else
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 SOMTestData = som_data_struct(Data');
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 SOMTestData = som_normalize(SOMTestData, obj.NormStruct);
+   268      barry 2010-04-09 20:38:15 +0200 (Fri, 09 Apr 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Return normalized feature vectors...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             NormedFeatureVectors = SOMTestData.data';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             switch wise
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 case 'nodewise'
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                     
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                     %% NORMALIZE THE FEATURE MASK IF NECESSARY ------------
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                     %------------------------------------------------------
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                     if isempty(Mask)
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                         Mask = ones(size(obj.SOM.mask)) ./ size(obj.SOM.mask, 1);
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                     end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     %% FIND BEST MATCHING UNITS IN SOM --------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     %------------------------------------------------------
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                     switch WhichBMUs
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                         case 'best', nBMUs = 1;
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                         case 'all', nBMUs = size(Codebook, 1);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     end
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010) 
+   275      barry 2010-04-15 11:45:04 +0200 (Thu, 15 Apr 2010)                     for iTestData = 1:size(SOMTestData.data,1)
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                         Matches(iTestData,:) = obj.findbmus_static(Codebook, SOMTestData.data(iTestData,:), nBMUs, Mask);
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                     end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 case 'clusterwise'
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     %% FIND TEST DATA TO NODE DISTANCES --------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     %------------------------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     % Distances between each of the test samples and the
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     % map nodes...
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                     TestDataMapDistances = som_eucdist2(Codebook, SOMTestData);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     % TestSampleWinningClusters
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     % This KNN method messes up sometimes when there's only
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     % one class, so we bypass it if that is the case.
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     % More efficient that way anyway.
+   280      barry 2010-04-19 18:47:03 +0200 (Mon, 19 Apr 2010)                     Unique = unique(obj.Clustering.Labels{obj.Clustering.OptimalK});
+   280      barry 2010-04-19 18:47:03 +0200 (Mon, 19 Apr 2010)                     if length(Unique) > 1
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         [Matches,P] =...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                             knn(TestDataMapDistances',...
+   280      barry 2010-04-19 18:47:03 +0200 (Mon, 19 Apr 2010)                                 obj.Clustering.Labels{obj.Clustering.OptimalK},...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                                 obj.KNN_max_k);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     else
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                         Matches = ones(size(TestDataMapDistances',1), obj.KNN_max_k) * Unique(1);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                     end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %% ------- *** CLUSTER *** ----------------------------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)         function [obj Centroids Indices Errors OptimalK KValidityInfo Relevance] = cluster(obj, varargin)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             % Defaults...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             Data = obj.SOM.codebook;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)             save_cluster_info = true;            
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)             feature_selection = false;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)             FeatureSelectionParams = 0;
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)             Relevance = [];
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             % Loop through arguments...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             i = 1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             while i <= length(varargin), 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 argok = 1; 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 if ischar(varargin{i}), 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     switch lower(varargin{i}), 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         % argument IDs
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         case {'data'}, i=i+1;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                             Data = varargin{i};
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                             save_cluster_info = false;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                             
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         case {'featureselection', 'feature_selection'}, i=i+1;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                             if islogical(varargin{i})                                
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                                 feature_selection = varargin{i};
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                                 FeaturesToSelectFrom = 1:size(Data,2);
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                             else
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                                 feature_selection = true;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                                 FeaturesToSelectFrom = varargin{i};
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                             end
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                             
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         case {'featureselectionparam', 'feature_selection_param',...
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                               'featureselectionparams', 'feature_selection_params'}, i=i+1;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                              FeatureSelectionParams = varargin{i};
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                             
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                         otherwise
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                             argok = 0;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 else
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     argok = 0;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 if ~argok, 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     disp(['CodebookModality.cluster(): Ignoring invalid argument #' num2str(i)]);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     fprintf(obj.UsageMessage);
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010) 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 i = i + 1;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)             end                        
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)             
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)             if feature_selection                
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                 
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                 Relevance = [];
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                 SelectedFeatureMask = ones(1,size(Data,2));
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                 
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                 if iscell(FeaturesToSelectFrom)
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                                        
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     SelectedFeatureMask(setdiff(1:length(SelectedFeatureMask), [FeaturesToSelectFrom{:}])) = 0;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     for iFeatureCell = 1:length(FeaturesToSelectFrom)
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         SubsetIndices = FeaturesToSelectFrom{iFeatureCell};
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % Histogram...
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % [n, xout] = hist(Data(:,SubsetIndices));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % Entropy...
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetEnt = -nansum(n.*log2(n));                        
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % Normed entropy...
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetNormEnt = SubsetEnt - min(SubsetEnt);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetNormEnt = SubsetNormEnt ./ norm(SubsetNormEnt,1);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % Normed variance/std...
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetVar = var(Data(:,SubsetIndices));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetNormVar = SubsetVar ./ norm(SubsetVar,1);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetSTD = std(Data(:,SubsetIndices));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetNormSTD = SubsetSTD ./ norm(SubsetSTD,1);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % Feature relevance...
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % SubsetRelevance = SubsetNormSTD ./ SubsetNormEnt;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % SubsetRelevance = SubsetNormSTD;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % SubsetRelevance = abs(SubsetNormEnt - max(SubsetNormEnt));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % % SubsetRelevance = SubsetRelevance ./ norm(SubsetRelevance,1);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetRelevance = SubsetNormEnt;
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                         
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         BinSizes = [0.1 0.125 0.1667 0.25 0.5];
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % BinSizes = [0.1];
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         S_bs = [];
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         S_ws = [];
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                         
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         for iBin = 1:length(BinSizes)
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                         
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             X = Data(:,SubsetIndices);
+     -          -                                            -                             P = 0.0:BinSizes(iBin):1.0;    
+     -          -                                            -                             % P = 0.0:0.1:1.0;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             M_p = histc(X, P);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             M = sum(M_p);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             X_weights = obj.Activations ./ norm(obj.Activations,1);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013) 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             S_b = zeros(1,size(X,2));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             S_w = zeros(1,size(X,2));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013) 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             for iDim = 1:size(X,2)
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013) 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                 % X_mean = mean(X(:,iDim));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                 X_mean = X_weights' * X(:,iDim);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013) 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                 for p = 1:length(P)-1        
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     X_p_i = X(:,iDim) > P(p) & X(:,iDim) <= P(p+1);        
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     X_p = X(X_p_i,iDim);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     % X_p_mean = mean(X_p);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     X_p_weights = X_weights(X_p_i) ./ norm(X_weights(X_p_i),1);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     X_p_mean = X_p_weights' * X_p;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013) 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     % S_b = Between-class variance...
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     S_b(iDim) = nansum([S_b(iDim) ((M_p(p,iDim) ./ M(iDim)) .* (X_p_mean - X_mean).^2)]);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013) 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     % S_w = Within-class variance...
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                     S_w(iDim) = nansum([S_w(iDim) ((M_p(p,iDim) ./ M(iDim)) .* sum((X_p - X_p_mean).^2))]);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013) 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                 end
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             end
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             S_bs(iBin,:) = S_b;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             S_ws(iBin,:) = S_w;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                             
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         end
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013) 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         SubsetRelevance = nanmean(S_bs) ./ nanmean(S_ws);
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SubsetRelevance = S_b ./ S_w;
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                         
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                         % Normalize...           
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                         FooSubsetRelevance = SubsetRelevance;
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                         FooSubsetRelevance(FooSubsetRelevance==Inf) = 0;                
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                         SubsetRelevance(SubsetRelevance==Inf) = max(FooSubsetRelevance);
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                         SubsetNormedRelevance = SubsetRelevance ./ norm(SubsetRelevance,1);
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                         
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                         % Add it to the pile...
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                         Relevance = [Relevance SubsetNormedRelevance];
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                         
+   810      barry 2013-10-29 09:41:08 +0100 (Tue, 29 Oct 2013)                         % SelectedSubsetSubIndices = find(SubsetNormSTD >= mean(SubsetNormSTD) + FeatureSelectionParams * std(SubsetNormSTD));
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                         % SelectedSubsetSubIndices = find(SubsetSTD >= mean(SubsetSTD) + FeatureSelectionParams * std(SubsetSTD));
+   812      barry 2013-11-12 11:46:11 +0100 (Tue, 12 Nov 2013)                         % SelectedSubsetSubIndices = find(SubsetRelevance >= mean(SubsetRelevance) + FeatureSelectionParams * std(SubsetRelevance));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         SelectedSubsetSubIndices = find(SubsetNormedRelevance >= mean(SubsetNormedRelevance) + FeatureSelectionParams * std(SubsetNormedRelevance));
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                         % SelectedSubsetSubIndices = find(SubsetRelevance < mean(SubsetRelevance) - FeatureSelectionParams * std(SubsetRelevance));
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                         
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         if isempty(SelectedSubsetSubIndices)
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                             % [~, SelectedSubsetSubIndices] = max(SubsetRelevance);
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                             SelectedSubsetSubIndices = find(FeaturesToSelectFrom{iFeatureCell});
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         end
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         CulledSubsetIndices = setdiff(SubsetIndices, SubsetIndices(SelectedSubsetSubIndices));
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                         SelectedFeatureMask(CulledSubsetIndices) = 0;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     end
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                 else
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     SubsetIndices = FeaturesToSelectFrom;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     
+     -          -                                            -                     % % Histogram...
+     -          -                                            -                     % [n, xout] = hist(Data(:,SubsetIndices));
+     -          -                                            -                     % 
+     -          -                                            -                     % % Entropy...
+     -          -                                            -                     % SubsetEnt = -nansum(n.*log2(n));                        
+     -          -                                            -                     % 
+     -          -                                            -                     % % Normed entropy...
+     -          -                                            -                     % SubsetNormEnt = SubsetEnt - min(SubsetEnt);
+     -          -                                            -                     % SubsetNormEnt = SubsetNormEnt ./ norm(SubsetNormEnt,1);
+     -          -                                            -                     % 
+     -          -                                            -                     % % Normed variance/std...
+     -          -                                            -                     % SubsetVar = var(Data(:,SubsetIndices));
+     -          -                                            -                     % SubsetNormVar = SubsetVar ./ norm(SubsetVar,1);
+     -          -                                            -                     % SubsetSTD = std(Data(:,SubsetIndices));
+     -          -                                            -                     % SubsetNormSTD = SubsetSTD ./ norm(SubsetSTD,1);
+     -          -                                            -                     % 
+     -          -                                            -                     % % Feature relevance...
+     -          -                                            -                     % % SubsetRelevance = SubsetNormSTD ./ SubsetNormEnt;
+     -          -                                            -                     % % SubsetRelevance = SubsetNormSTD;
+     -          -                                            -                     % % SubsetRelevance = abs(SubsetNormEnt - max(SubsetNormEnt));
+     -          -                                            -                     % % SubsetRelevance = SubsetRelevance ./ norm(SubsetRelevance,1);
+     -          -                                            -                     % SubsetRelevance = SubsetNormEnt;
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013) 
+     -          -                                            -                     BinSizes = [0.1 0.125 0.1667 0.25 0.5];
+     -          -                                            -                     % BinSizes = [0.1];
+     -          -                                            -                     S_bs = [];
+     -          -                                            -                     S_ws = [];
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013) 
+     -          -                                            -                     for iBin = 1:length(BinSizes)
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013) 
+     -          -                                            -                         X = Data(:,SubsetIndices);
+     -          -                                            -                         P = 0.0:BinSizes(iBin):1.0;    
+     -          -                                            -                         % P = 0.0:0.1:1.0;
+     -          -                                            -                         M_p = histc(X, P);
+     -          -                                            -                         M = sum(M_p);
+     -          -                                            -                         X_weights = obj.Activations ./ norm(obj.Activations,1);
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013) 
+     -          -                                            -                         S_b = zeros(1,size(X,2));
+     -          -                                            -                         S_w = zeros(1,size(X,2));
+     -          -                                            - 
+     -          -                                            -                         for iDim = 1:size(X,2)
+     -          -                                            - 
+     -          -                                            -                             % X_mean = mean(X(:,iDim));
+     -          -                                            -                             X_mean = X_weights' * X(:,iDim);
+     -          -                                            - 
+     -          -                                            -                             for p = 1:length(P)-1        
+     -          -                                            -                                 X_p_i = X(:,iDim) > P(p) & X(:,iDim) <= P(p+1);        
+     -          -                                            -                                 X_p = X(X_p_i,iDim);
+     -          -                                            -                                 % X_p_mean = mean(X_p);
+     -          -                                            -                                 X_p_weights = X_weights(X_p_i) ./ norm(X_weights(X_p_i),1);
+     -          -                                            -                                 X_p_mean = X_p_weights' * X_p;
+     -          -                                            - 
+     -          -                                            -                                 % S_b = Between-class variance...
+     -          -                                            -                                 S_b(iDim) = nansum([S_b(iDim) ((M_p(p,iDim) ./ M(iDim)) .* (X_p_mean - X_mean).^2)]);
+     -          -                                            - 
+     -          -                                            -                                 % S_w = Within-class variance...
+     -          -                                            -                                 S_w(iDim) = nansum([S_w(iDim) ((M_p(p,iDim) ./ M(iDim)) .* sum((X_p - X_p_mean).^2))]);
+     -          -                                            - 
+     -          -                                            -                             end
+     -          -                                            -                         end
+     -          -                                            - 
+     -          -                                            -                         S_bs(iBin,:) = S_b;
+     -          -                                            -                         S_ws(iBin,:) = S_w;
+     -          -                                            - 
+     -          -                                            -                     end
+     -          -                                            - 
+     -          -                                            -                     SubsetRelevance = nanmean(S_bs) ./ nanmean(S_ws);
+     -          -                                            -                     % SubsetRelevance = S_b ./ S_w;
+     -          -                                            - 
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                     % Normalize...           
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                     FooSubsetRelevance = SubsetRelevance;
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                     FooSubsetRelevance(FooSubsetRelevance==Inf) = 0;                
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                     SubsetRelevance(SubsetRelevance==Inf) = max(FooSubsetRelevance);
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                     SubsetNormedRelevance = SubsetRelevance ./ norm(SubsetRelevance,1);
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013) 
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                     % Add it to the pile...
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                     Relevance = [Relevance SubsetNormedRelevance];
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013) 
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                     % SelectedSubsetSubIndices = find(SubsetNormSTD >= mean(SubsetNormSTD) + FeatureSelectionParams * std(SubsetNormSTD));
+     -          -                                            -                     % SelectedSubsetSubIndices = find(SubsetSTD >= mean(SubsetSTD) + FeatureSelectionParams * std(SubsetSTD));
+     -          -                                            -                     % SelectedSubsetSubIndices = find(SubsetRelevance >= mean(SubsetRelevance) + FeatureSelectionParams * std(SubsetRelevance));
+     -          -                                            -                     SelectedSubsetSubIndices = find(SubsetNormedRelevance >= mean(SubsetNormedRelevance) + FeatureSelectionParams * std(SubsetNormedRelevance));
+     -          -                                            -                     % SelectedSubsetSubIndices = find(SubsetRelevance < mean(SubsetRelevance) - FeatureSelectionParams * std(SubsetRelevance));
+     -          -                                            - 
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     if isempty(SelectedSubsetSubIndices)
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                         % [~, SelectedSubsetSubIndices] = max(SubsetRelevance);
+   811      barry 2013-10-29 23:00:26 +0100 (Tue, 29 Oct 2013)                         SelectedSubsetSubIndices = find(FeaturesToSelectFrom{iFeatureCell});
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     end
+     -          -                                            - 
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     CulledSubsetIndices = setdiff(SubsetIndices, SubsetIndices(SelectedSubsetSubIndices));
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013) 
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     SelectedFeatureMask(CulledSubsetIndices) = 0;
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                     
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                 end
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                 
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                 % Normalize relevance scores...
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                 % FooRelevance = Relevance;
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                 % FooRelevance(FooRelevance==Inf) = 0;                
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                 % Relevance(Relevance==Inf) = max(FooRelevance);
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                 % Relevance = Relevance ./ norm(Relevance,1);
+   807      barry 2013-10-18 21:32:28 +0200 (Fri, 18 Oct 2013)                 
+   804      barry 2013-10-07 16:48:47 +0200 (Mon, 07 Oct 2013)                 Data = Data(:,logical(SelectedFeatureMask));
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             
+     -          -                                            -             [Centroids, Indices, Errors, DB_Indices] =...
+     -          -                                            -                 kmeans_clusters(Data); % find clusterings
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)             
+     -          -                                            -             % fkmeans_options.weight = obj.Activations;
+     -          -                                            -             % 
+     -          -                                            -             % for k = 1:10
+     -          -                                            -             %     if k == 1
+     -          -                                            -             %         [Centroids{k}, clusters, err] = som_kmeans('batch', Data, k, 100, 0);
+     -          -                                            -             %         Indices{k} = ones(size(Data,1),1);
+     -          -                                            -             %     else                    
+     -          -                                            -             %         [Indices{k} Centroids{k} dis] = fkmeans(Data, k, fkmeans_options);
+     -          -                                            -             %     end
+     -          -                                            -             % end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) % 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             [dummy,best_DB_k] = min(ind); % find the cluster with smallest Davies-Bouldin index
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             oparcObject.Classifier.KMEANS_DB_best_k = best_DB_k;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             Dmatrix = similarity_euclid(Data);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             for k = 1:length(Indices)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 [DB(k),CH(k),Dunn(k),KL(k),Han(k),st] =...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                     valid_internal_deviation(Data, Indices{k}, 1);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %                 S = ind2cluster(Indices{k});                
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %                 [Hom(k), Sep(k), Cindex(k), wtertra(k)] = ... %, Dunn(k), DB(k)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %                      valid_internal_intra(Dmatrix, S, 1, false);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                  
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 Silly = silhouette(Data, Indices{k}, 'euclidean');
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 Sil(k) = mean(Silly);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% Davies-Bouldin
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Minimum value determines the optimal number of clusters [Bolshakova et al. 2003; Dimitriadou et al. 2002].
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             [foo bar] = min(DB(2:length(DB)));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             Winners(1) = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{1}.Test = 'Davies-Bouldin';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{1}.Result = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% Calinski-Harabasz
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Maximum value indicates optimal NC [Dudoit et al. 2002].
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             [foo bar] = max(CH(2:length(CH)));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             Winners(2) = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{2}.Test = 'Calinski-Harabasz';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{2}.Result = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% Dunn index
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Maximum value indicates optimal NC [Bolshakova et al. 2003; Halkidi et al. 2001].
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             [foo bar] = max(Dunn(2:length(Dunn)));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             Winners(3) = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{3}.Test = 'Dunn';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{3}.Result = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% Krzanowski-Lai index
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % maximum value indicates optimal NC [Dudoit et al. 2002].
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             [foo bar] = max(KL(2:length(KL)));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             Winners(4) = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{4}.Test = 'Krzanowski-Lai';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{4}.Result = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% C index (Hubert-Levin)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Minimal C-index indicates optimal NC [Bolshakova et al. 2003; Bolshakova et al. 2006; Dimitriadou et al. 2002].
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             [foo bar] = min(Cindex(2:length(Cindex)));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             Winners(5) = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             KValidityInfo{5}.Test = 'C index (Hubert-Levin)';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             KValidityInfo{5}.Result = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% Silhouette index (overall average silhouette)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % The largest silhouette indicates the optimal NC [Dudoit et al. 2002; Bolshakova et al. 2003].
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             [foo bar] = max(Sil(2:length(Sil)));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             Winners(5) = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{5}.Test = 'Silhouette';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             KValidityInfo{5}.Result = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% Weighted inter-intra index
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % Search forward (k=2,3,4,...) and stop at the first down-tick
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             % of the index, which indicates optimal NC [Strehl 2002].
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             [foo bar] = max(wtertra(2:length(wtertra)));
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             Winners(6) = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             KValidityInfo{6}.Test = 'Weighted inter-intra index';
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010) %             KValidityInfo{6}.Result = bar + 1;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% SELECT THE K-VALUE THAT WON MOST FREQUENTLY...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             OptimalK = mode(Winners);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% SAVE THIS STUFF IN THE OBJECT...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             if save_cluster_info
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 obj.Clustering.Centroids = Centroids;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 obj.Clustering.Labels = Indices;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                 
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                 if ~exist('Errors', 'var')
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                     Errors = NaN;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                 end
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 obj.Clustering.Errors = Errors;
+   813      barry 2013-11-16 15:22:24 +0100 (Sat, 16 Nov 2013)                                 
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 obj.Clustering.OptimalK = OptimalK;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                 obj.Clustering.ValidityInfo = KValidityInfo;
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)             end
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)          
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)             if isempty(Relevance)
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                 Relevance = ones(1,size(Data,2));
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)                 Relevance = Relevance ./ norm(Relevance,1);
+   809      barry 2013-10-24 17:16:09 +0200 (Thu, 24 Oct 2013)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)         
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)         %% ------- *** CREATEALGORITHM *** --------------------------------
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)         % *****************************************************************
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)         % Factory method for algorithm creation.
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)         % *****************************************************************
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)         function Algo = createAlgorithm(obj, varargin)
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)             
+   241      barry 2010-03-16 23:04:53 +0100 (Tue, 16 Mar 2010)             % Defaults...
+   241      barry 2010-03-16 23:04:53 +0100 (Tue, 16 Mar 2010)             Updaters = {'SOM'};
+   241      barry 2010-03-16 23:04:53 +0100 (Tue, 16 Mar 2010)             
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)             % Loop through arguments...
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)             i = 1;
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)             iPassedArgs = 1;
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)             while i <= length(varargin), 
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                 argok = 1; 
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                 if ischar(varargin{i}), 
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                     switch lower(varargin{i}), 
+   241      barry 2010-03-16 23:04:53 +0100 (Tue, 16 Mar 2010)                         case {'updaters', 'updater'},...
+   241      barry 2010-03-16 23:04:53 +0100 (Tue, 16 Mar 2010)                                 i=i+1; Updaters = varargin{i};
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)                         
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                         otherwise
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                             PassedArgs{iPassedArgs} = varargin{i};
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                             PassedArgs{iPassedArgs+1} = varargin{i+1};
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                             i = i + 1;
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                             iPassedArgs = iPassedArgs + 2;
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                     end
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                 else
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                     argok = 0;
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                 end
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010) 
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                 if ~argok, 
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)                     disp(['CodebookModality.createAlgorithm(): Ignoring invalid argument #' num2str(i)]);
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                     fprintf(obj.UsageMessage);
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                 end
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010) 
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)                 i = i + 1;
+   240      barry 2010-03-15 01:22:57 +0100 (Mon, 15 Mar 2010)             end
+   241      barry 2010-03-16 23:04:53 +0100 (Tue, 16 Mar 2010)             
+   266      barry 2010-04-08 15:28:09 +0200 (Thu, 08 Apr 2010)             %% NORMALIZE THE FEATURE MASK ---------------------------------
+   266      barry 2010-04-08 15:28:09 +0200 (Thu, 08 Apr 2010)             %--------------------------------------------------------------
+   337      barry 2010-10-20 14:18:26 +0200 (Wed, 20 Oct 2010)             obj.SOM.mask = obj.SOM.mask ./ norm(obj.SOM.mask, 1);
+   266      barry 2010-04-08 15:28:09 +0200 (Thu, 08 Apr 2010)             
+   241      barry 2010-03-16 23:04:53 +0100 (Tue, 16 Mar 2010)             %% SET UP MODALITY CONDITIONS FOR VARIOUS ALGORITHMS ----------
+   241      barry 2010-03-16 23:04:53 +0100 (Tue, 16 Mar 2010)             %--------------------------------------------------------------
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)             for i = 1:length(Updaters)
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % For supervised algorithms, we need to pre-label
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % the codebook vectors...
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 switch lower(Updaters{i})                                        
+   599      barry 2011-06-16 15:05:27 +0200 (Thu, 16 Jun 2011)                     case {'lsom',...
+   599      barry 2011-06-16 15:05:27 +0200 (Thu, 16 Jun 2011)                           'lvq1', 'lvq', 'olvq1', 'olvq',...
+   316      barry 2010-06-04 20:12:35 +0200 (Fri, 04 Jun 2010)                           'rlvq', 'rlvq1', 'orlvq1', 'orlvq',...
+   791      barry 2012-08-29 18:49:52 +0200 (Wed, 29 Aug 2012)                           'laorlvq', 'lvq3',...
+   778      barry 2012-07-16 21:44:25 +0200 (Mon, 16 Jul 2012)                           'glvq', 'grlvq', 'srng',...
+   791      barry 2012-08-29 18:49:52 +0200 (Wed, 29 Aug 2012)                           'ldalvq1', 'fc1lvq1', 'ldalvq1_3', 'ldalvq1_4', 'ldalvq1_5', 'ldaolvq', 'ldaolvq2', 'ldaolvq3',...
+   791      barry 2012-08-29 18:49:52 +0200 (Wed, 29 Aug 2012)                           'ldaglvq', 'fc1glvq', 'ldaglvq_3', 'fc1glvq', 'fc2glvq', 'ldaglvq_5', 'ldaoglvq', 'ldaoglvq_3',...
+   346      barry 2010-11-24 21:30:09 +0100 (Wed, 24 Nov 2010)                           'laldaolvq', 'lcaldaolvq', 'laldaglvq'},
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)                         obj.ClassLabels = zeros(size(obj.SOM.codebook,1),1);
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)                         increment = floor(size(obj.SOM.codebook,1) / obj.nClasses);
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)                         for j = 1:obj.nClasses
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)                             obj.ClassLabels( ((j-1) * increment) + 1 : max(j * increment, size(obj.SOM.codebook,1))) = j;                                       
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)                         end
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 end
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)                     
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % For algorithms that require the first 2 BMUs,
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % we need to alter the findbmu method appropriately...
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 switch lower(Updaters{i})
+   263      barry 2010-03-31 14:15:32 +0200 (Wed, 31 Mar 2010)                     case {'lvq3', 'heurlvq3', 'heurmamrlvq', 'heurfmamrlvq'},...
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                         obj.nBMUs = 2;                        
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 end
+   286      barry 2010-05-18 14:39:36 +0200 (Tue, 18 May 2010)                     
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % Similarly, for GLVQ-style algorithms and some locally
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % adaptive algorithms, we grab ALL of
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % the BMUs, since such algorithms require both the BMU
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % for the correct class and the BMU for the closest
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % incorrect class...
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 switch lower(Updaters{i})
+   791      barry 2012-08-29 18:49:52 +0200 (Wed, 29 Aug 2012)                     case {'glvq', 'grlvq', 'ldaglvq', 'fc1glvq', 'ldaglvq_3', 'fc1glvq', 'fc2glvq', 'ldaglvq_5', 'ldalvq1_3', 'ldaolvq3', 'ldaoglvq', 'ldaoglvq_3',...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                           'laldaglvq', 'laldaolvq', 'lcaldaolvq',...
+   791      barry 2012-08-29 18:49:52 +0200 (Wed, 29 Aug 2012)                           'heurfldaolvq', 'heurfldaolvq3', 'heurglvq', 'heurgrlvq', 'heurfc2lvq1', 'heurfc2glvq', 'heursom'}
+   286      barry 2010-05-18 14:39:36 +0200 (Tue, 18 May 2010)                         obj.nBMUs = size(obj.SOM.codebook, 1);
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 end
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010) 
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % Some update rules require setting up
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % a RunningStat object for recording a
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % running mean and variance for each class...
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 switch lower(Updaters{i})                        
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                     case {'ldaolvq2'}                                                                        
+   295      barry 2010-05-31 21:45:43 +0200 (Mon, 31 May 2010)                         for iClass = 1:obj.nClasses
+   295      barry 2010-05-31 21:45:43 +0200 (Mon, 31 May 2010)                             obj.ClassStats{iClass} = RunningStat();
+   295      barry 2010-05-31 21:45:43 +0200 (Mon, 31 May 2010)                         end
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 end
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % Some cross-modal heuristic update rules will require
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % auxiliary distances for each node...
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 switch lower(Updaters{i})
+   791      barry 2012-08-29 18:49:52 +0200 (Wed, 29 Aug 2012)                     case {'heurfldaolvq', 'heurfldaolvq3', 'heurglvq', 'heurgrlvq', 'heurfc2lvq1', 'heurfc2glvq', 'heursom'}
+   321      barry 2010-06-27 20:17:48 +0200 (Sun, 27 Jun 2010)                         obj.nAuxDists = size(obj.SOM.codebook, 1);
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)                 end
+   316      barry 2010-06-04 20:12:35 +0200 (Fri, 04 Jun 2010)                 
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % Some update rules require setting up
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % RunningStat objects for recording a
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 % running mean and variance for each node...
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 switch lower(Updaters{i})
+   791      barry 2012-08-29 18:49:52 +0200 (Wed, 29 Aug 2012)                     case {'ldalvq1_3', 'ldalvq1_4', 'ldalvq1_5', 'ldaolvq3',...
+   667      barry 2011-09-09 17:58:25 +0200 (Fri, 09 Sep 2011)                           'heurfldaolvq3', 'heurforlvq', 'heurorlvq1', 'heurrlvq1',...
+   791      barry 2012-08-29 18:49:52 +0200 (Wed, 29 Aug 2012)                           'heurfc2lvq1', 'heurfc2glvq', 'heursom',...
+   665      barry 2011-09-09 17:13:36 +0200 (Fri, 09 Sep 2011)                           'ldaglvq_3', 'fc2glvq', 'ldaglvq_5', 'ldaoglvq_3',...
+   325      barry 2010-08-30 18:01:39 +0200 (Mon, 30 Aug 2010)                           'lcaldaolvq'}
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                         for iNode = 1:size(obj.SOM.codebook,1)
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                             obj.NodeStats{iNode} = RunningStat();
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                         end
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 end
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 % Probabilities for each node...
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 % (required by the SOMN algorithm)
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 switch lower(Updaters{i})
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                     case {'somn'}
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                         obj.Probabilities = ones(size(obj.SOM.codebook,1),1) / size(obj.SOM.codebook,1);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 end
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)             
+   316      barry 2010-06-04 20:12:35 +0200 (Fri, 04 Jun 2010)                 % Set up a RunningStat object for recording a
+   316      barry 2010-06-04 20:12:35 +0200 (Fri, 04 Jun 2010)                 % running average of the feature mask...
+   316      barry 2010-06-04 20:12:35 +0200 (Fri, 04 Jun 2010)                 obj.MaskStats = RunningStat();
+   324      barry 2010-07-04 17:31:53 +0200 (Sun, 04 Jul 2010)                 
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)             end
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)                         
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)             %% CREATE ALGORITHM OBJECT ------------------------------------
+   242      barry 2010-03-18 21:22:13 +0100 (Thu, 18 Mar 2010)             %--------------------------------------------------------------
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)             Algo = CodebookAlgorithm(obj, 'updaters', Updaters, PassedArgs{1:end});
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)             
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)         end
+   237      barry 2010-03-13 15:36:26 +0100 (Sat, 13 Mar 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %% ------- *** FAST METHODS FOR FINDING BMU *** -------------------
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         %******************************************************************
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % WARNING: The following methods assume that 'Data' is a single
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         % feature vector and is already normalized!
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)         %******************************************************************                
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         function BMUs = findbmus_mex_wrapper(obj, Data)
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             [BMUs obj.Dx obj.Distances] = findbmus_mex(Data', obj.SOM.codebook', obj.SOM.mask, obj.mex_metric_code);
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             obj.Dx = obj.Dx';
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             BMUs = BMUs(1:obj.nBMUs);
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         function BMUs = findbmus_mex_wrapper_nomask(obj, Data)
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             [BMUs obj.Dx obj.Distances] = findbmus_mex(Data', obj.SOM.codebook', obj.OnesMask, obj.mex_metric_code);
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             obj.Dx = obj.Dx';
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             BMUs = BMUs(1:obj.nBMUs);
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         function BMUs = findbmus_mex_wrapper_static(obj, Codebook, Data, nBMUs, Mask)
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             [BMUs Dx Distances] = findbmus_mex(Data', Codebook', Mask, obj.mex_metric_code);
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             obj.Dx = obj.Dx';
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)             BMUs = BMUs(1:obj.nBMUs);
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         end
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         
+   344      barry 2010-11-18 12:04:46 +0100 (Thu, 18 Nov 2010)         function BMUs = findbmus_matlab(obj, Data)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             obj.Dx = obj.SOM.codebook - Data(obj.mu_x_1, :);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)             % findbmus doesn't know if feature selection feedback will be
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)             % used, so we just use the general metric function pointer...
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             obj.Distances = obj.metric(obj.Dx, obj.SOM.mask);
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             %% Find & save BMUs (faster than full sort?)...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             TempDists = obj.Distances;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   243      barry 2010-03-19 20:40:21 +0100 (Fri, 19 Mar 2010)             for iBMU = 1:obj.nBMUs               
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                 [qerr bmu] = min(TempDists);  % Find BMU i
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                 BMUs(iBMU) = bmu;             % Return BMU i...
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)                 TempDists(bmu) = Inf;
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)         function [BMUs Dx Distances] = findbmus_matlab_static(obj, Codebook, Data, nBMUs, Mask)
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)             
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             Dx = Codebook - Data(ones(size(Codebook,1),1), :);
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)             
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)             % findbmus_static definitely gets passed a mask, so we should
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)             % use the metric_withmask function pointer...
+   290      barry 2010-05-26 18:51:50 +0200 (Wed, 26 May 2010)             Distances = obj.metric_withmask(Dx, Mask);
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)             
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)             TempDists = Distances;
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)             
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             %% Find & save BMUs (faster than full sort?)...            
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             for iBMU = 1:nBMUs               
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)                 [qerr bmu] = min(TempDists);  % Find BMU i
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)                 BMUs(iBMU) = bmu;             % Return BMU i...
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)                 
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)                 TempDists(bmu) = Inf;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)             end
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)             
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)         end
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)         
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         function BMUs = findbmus_somn_matlab(obj, Data)
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             obj.Dx = obj.SOM.codebook - Data(obj.mu_x_1, :);
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)             obj.Distances = obj.metric_withmask(obj.Dx, obj.SOM.mask);
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %             for i = 1:size(obj.Dx)
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 % No normalizing constant needed
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 % Respon(NdxNeuro)=exp(-0.5*log(det(Model.C{NdxNeuro}))-0.5 * VectorDiff'*Model.CInv{NdxNeuro}*VectorDiff);
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 obj.Activations(i,:) = exp(-0.5*log(det(obj.Cov{i})) - (0.5 * obj.Dx(i,:) * obj.CovInv{i} * obj.Dx(i,:)'));
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 if ~isfinite(obj.Activations(i,:))
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                     obj.Activations(i,:)=0;
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 end
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %             end
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)             
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)             obj.Activations = Utils.activations(obj.Algo.ActivationTypePhases{obj.Algo.iActivationTypePhase}.type,...
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)                                                 obj.Ud, obj.Dx, obj.Cov, obj.CovInv, obj.Distances);
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)             
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             MySum=sum(obj.Activations);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             if MySum>0
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                  obj.Activations = obj.Activations/sum(obj.Activations);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             else
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 obj.Activations = zeros(size(obj.SOM.codebook,1),1);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             end
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             %% Find & save BMUs (faster than full sort?)...
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             TempActivations = obj.Activations;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             for iBMU = 1:obj.nBMUs               
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 [qerr bmu] = max(TempActivations);  % Find BMU i
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 BMUs(iBMU) = bmu;                   % Return BMU i...
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 TempActivations(bmu) = 0;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             end
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         end
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         function [BMUs Dx Activations] = findbmus_somn_matlab_static(obj, Codebook, Data, nBMUs, Mask)
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             Dx = Codebook - Data(ones(size(Codebook,1),1), :);
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)             Distances = obj.metric_withmask(Dx, Mask);
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %             for i = 1:size(Dx)
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 % No normalizing constant needed
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 % Respon(NdxNeuro)=exp(-0.5*log(det(Model.C{NdxNeuro}))-0.5 * VectorDiff'*Model.CInv{NdxNeuro}*VectorDiff);
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 Activations(i,:) = exp(-0.5*log(det(obj.Cov{i}))-0.5 * Dx(i)'*obj.CovInv{i}*Dx(i));
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 if ~isfinite(Activations(i,:))
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                     Activations(i,:)=0;
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %                 end
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011) %             end
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)             
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)             Activations = Utils.activations(obj.Algo.ActivationTypePhases{obj.Algo.iActivationTypePhase}.type,...
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)                                             obj.Ud, Dx, obj.Cov, obj.CovInv, Distances);
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)             
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             MySum=sum(Activations);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             if MySum>0
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 Activations = Activations/sum(Activations);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             else
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)                 Activations = zeros(size(Codebook,1),1);
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             end
+   514      barry 2011-03-31 17:44:47 +0200 (Thu, 31 Mar 2011)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             %% Find & save BMUs (faster than full sort?)...
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             TempActivations = Activations;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             for iBMU = 1:nBMUs               
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 [qerr bmu] = max(TempActivations);  % Find BMU i
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 BMUs(iBMU) = bmu;                   % Return BMU i...
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)                 TempActivations(bmu) = 0;
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             end
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)             
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         end
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)         function Activations = findactivations(obj, Data)
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)             
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)             [BMUs Dx Distances] = findbmus_matlab_static(obj, obj.SOM.codebook, Data, 1, obj.SOM.mask);
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)             
+   527      barry 2011-04-15 18:25:19 +0200 (Fri, 15 Apr 2011)             Activations = Utils.activations(obj.Algo.ActivationTypePhases{obj.Algo.iActivationTypePhase}.type,...
+   527      barry 2011-04-15 18:25:19 +0200 (Fri, 15 Apr 2011)                                             obj.Ud,...
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)                                             Dx,...
+   527      barry 2011-04-15 18:25:19 +0200 (Fri, 15 Apr 2011)                                             obj.Cov,...
+   528      barry 2011-04-19 16:03:40 +0200 (Tue, 19 Apr 2011)                                             obj.CovInv,...
+   527      barry 2011-04-15 18:25:19 +0200 (Fri, 15 Apr 2011)                                             Distances,...
+   527      barry 2011-04-15 18:25:19 +0200 (Fri, 15 Apr 2011)                                             BMUs(1),...
+   527      barry 2011-04-15 18:25:19 +0200 (Fri, 15 Apr 2011)                                             obj.r);
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)             
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)         end
+   504      barry 2011-03-11 18:24:54 +0100 (Fri, 11 Mar 2011)         
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         %% ------- *** CLEARBMUS *** --------------------------------------
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         % *****************************************************************
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         % *****************************************************************
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         function obj = clearbmus(obj)
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             obj.BMUs = [];
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)             
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         end
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)     end
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)     
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)     methods (Access = private)                
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)         
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         function Dists = sumsquared_metric(obj, Dx, varargin)
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             Dists = Dx.^2 * obj.OnesMask;
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)         end
+   264      barry 2010-04-06 18:30:41 +0200 (Tue, 06 Apr 2010)         
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         function Dists = sumsquared_metric_withmask(obj, Dx, Mask)
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             Dists = Dx.^2 * Mask;
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         end
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         function Dists = euclidean_metric(obj, Dx, varargin)
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             Dists = sqrt(Dx.^2 * obj.OnesMask);
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         end
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         function Dists = euclidean_metric_withmask(obj, Dx, Mask)
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)             Dists = sqrt(Dx.^2 * Mask);
+   513      barry 2011-03-30 21:25:30 +0200 (Wed, 30 Mar 2011)         end               
+   274      barry 2010-04-14 20:20:57 +0200 (Wed, 14 Apr 2010)         
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)     end
+   232      barry 2010-03-08 21:20:51 +0100 (Mon, 08 Mar 2010)     
+   269      barry 2010-04-11 17:47:26 +0200 (Sun, 11 Apr 2010) end
