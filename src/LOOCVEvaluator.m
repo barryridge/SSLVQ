@@ -181,8 +181,10 @@ classdef LOOCVEvaluator < Evaluator & handle
                             v = ver('matlab');
                             if str2double(v.Version) < 7.7
                                 rand('twister', sum(100*clock));
-                            else
+                            elseif str2double(v.Version) < 8.3
                                 RandStream.setDefaultStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
+                            else
+                                RandStream.setGlobalStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
                             end
                             
                             switch obj.randomize_training_data
@@ -203,8 +205,10 @@ classdef LOOCVEvaluator < Evaluator & handle
                                 % same start point and seed for each learner...
                                 if str2double(v.Version) < 7.7
                                     rand('twister', seed);
+                                elseif str2double(v.Version) < 8.3
+                                    RandStream.setDefaultStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
                                 else
-                                    RandStream.setDefaultStream(RandStream('mrg32k3a', 'seed', seed));
+                                    RandStream.setGlobalStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
                                 end
                                 
                                 % Turn off command-line display if running

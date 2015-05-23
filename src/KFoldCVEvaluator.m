@@ -142,13 +142,11 @@ classdef KFoldCVEvaluator < Evaluator & handle
                     % Randomize the data...
                     v = ver('matlab');
                     if str2double(v.Version) < 7.7
-                        rand('twister', obj.randomizer_seed);
-                        
-                    elseif str2double(v.Version) >= 8.1
-                        RandStream.setGlobalStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
-                        
+                        rand('twister', obj.randomizer_seed);                        
+                    elseif str2double(v.Version) < 8.3
+                        RandStream.setDefaultStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
                     else
-                        RandStream.setDefaultStream(RandStream('mrg32k3a', 'seed', obj.randomizer_seed));
+                        RandStream.setGlobalStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
                     end
                     Data = Learner.randomize(Data);
 
@@ -215,12 +213,10 @@ classdef KFoldCVEvaluator < Evaluator & handle
                                 % same start point and seed for each learner...
                                 if str2double(v.Version) < 7.7
                                     rand('twister', seed);
-                                    
-                                elseif str2double(v.Version) >= 8.1                                    
-                                    RandStream.setGlobalStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
-                                    
+                                elseif str2double(v.Version) < 8.3
+                                    RandStream.setDefaultStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
                                 else
-                                    RandStream.setDefaultStream(RandStream('mrg32k3a', 'seed', seed));
+                                    RandStream.setGlobalStream(RandStream('mrg32k3a', 'seed', sum(100*clock)));
                                 end
                                 
                                 % Turn off command-line display if running
