@@ -13,6 +13,9 @@ classdef RFLearner < Learner
         % RF model...
         Model = [];
         
+        % Feature relevances...
+        FeatureMask = [];
+        
         % Normalisation struct...
         NormStruct = [];
         
@@ -300,7 +303,13 @@ classdef RFLearner < Learner
                   
             X_trn = obj.TrainingData1Epoch.Modalities{1}.NormedFeatureVectors';            
             
-            obj.Model = classRF_train(X_trn,Y_trn);    
+            % Add feature relevance calculation to the options...
+            clear extra_options
+            extra_options.importance = 1;
+            
+            obj.Model = classRF_train(X_trn, Y_trn, 500, floor(sqrt(size(X_trn,2))), extra_options);
+            
+            obj.FeatureMask = obj.Model.importance(:,end-1);
             
             obj.is_trained = true;
             
@@ -475,6 +484,8 @@ classdef RFLearner < Learner
             TestData.Results.Percent =...
                 TestData.Results.Score /...
                     size(TestData.Modalities{1}.FeatureVectors,2);
+                
+            TestData.Results.FeatureMasks = obj.FeatureMask;
                 
             % If we were using the internal test data in the
             % class, we should overwrite it with the new results...
