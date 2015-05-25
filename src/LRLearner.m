@@ -466,11 +466,26 @@ classdef LRLearner < Learner
             %---------------------------------------------------------------
             %---------------------------------------------------------------
 
-            [foo bar] = find(TestData.Modalities{1}.ClassLabels(...
+            [TestData.Results.GroundTruth bar] = find(TestData.Modalities{1}.ClassLabels(...
                                 obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices, :));
                             
+            TestData.Results.GroundTruth = TestData.Results.GroundTruth';
+                            
+            TestData.Results.ConfusionMatrix = zeros(size(obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices,2));
+            
+            for iGroundTruth = 1:size(TestData.Results.ConfusionMatrix,1)
+                
+                GroundTruthClassIndices = find(TestData.Results.GroundTruth == iGroundTruth);
+                
+                for iPrediction = 1:size(TestData.Results.ConfusionMatrix,2)
+                    
+                    TestData.Results.ConfusionMatrix(iGroundTruth, iPrediction) =...
+                        sum(TestData.Results.InToOutClassification(GroundTruthClassIndices) == iPrediction);
+                end
+            end
+                            
             TestData.Results.Matches =...
-                (foo' == TestData.Results.InToOutClassification);
+                (TestData.Results.GroundTruth == TestData.Results.InToOutClassification);
             
             TestData.Results.Score =...
                 sum(TestData.Results.Matches, 2);
