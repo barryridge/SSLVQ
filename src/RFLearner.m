@@ -293,12 +293,25 @@ classdef RFLearner < Learner
                 end
 
                 i = i + 1;
-            end
+            end                        
             
-            Y_trn = ones(size(obj.TrainingData1Epoch.Modalities{1}.ClassLabels,2),1);            
-            for iClass = 2:obj.TrainingData1Epoch.Modalities{1}.nGroundTruths
-                Y_trn(logical(obj.TrainingData1Epoch.Modalities{1}.ClassLabels(...
-                              obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices(iClass), :)), :) = iClass;
+            % A multinomial classifier
+            %
+            % NOTE: Class label 0 is reserved for the null hypothesis.
+            %
+            if obj.TrainingData1Epoch.Modalities{1}.nGroundTruths > 1
+                
+                Y_trn = zeros(size(obj.TrainingData1Epoch.Modalities{1}.ClassLabels,2),1);
+                
+                for iClass = 1:obj.TrainingData1Epoch.Modalities{1}.nGroundTruths
+                    Y_trn(logical(obj.TrainingData1Epoch.Modalities{1}.ClassLabels(...
+                                  obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices(iClass), :)), :) = iClass;
+                end
+            % ...or a binary classifier
+            else
+                
+                Y_trn = zeros(size(obj.TrainingData1Epoch.Modalities{1}.ClassLabels,2),1);
+                Y_trn(logical(obj.TrainingData1Epoch.Modalities{1}.ClassLabels(obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices,:)),:) = 1;
             end
                   
             X_trn = obj.TrainingData1Epoch.Modalities{1}.NormedFeatureVectors';            
@@ -336,7 +349,7 @@ classdef RFLearner < Learner
             
             % FOR THE MOMENT, THE CLASSIFY METHOD WILL JUST CLASSIFY
             % INTERNAL TEST SAMPLE INPUT MODALITY VECTORS...
-            % 
+            % % 
             % ToDo: Extend this!
             
             %% CHECK THAT WE HAVE A TRAINED CLASSIFIER --------------------
@@ -472,22 +485,44 @@ classdef RFLearner < Learner
             %---------------------------------------------------------------
             %---------------------------------------------------------------
 
-            [TestData.Results.GroundTruth bar] = find(TestData.Modalities{1}.ClassLabels(...
-                                obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices, :));
-                            
-            TestData.Results.GroundTruth = TestData.Results.GroundTruth';
-                            
-            TestData.Results.ConfusionMatrix = zeros(size(obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices,2));
-            
-            for iGroundTruth = 1:size(TestData.Results.ConfusionMatrix,1)
+            if obj.TrainingData1Epoch.Modalities{1}.nGroundTruths > 1
                 
-                GroundTruthClassIndices = find(TestData.Results.GroundTruth == iGroundTruth);
+                TestData.Results.GroundTruth = zeros(size(TestData.FeatureVectors,2),1);
                 
-                for iPrediction = 1:size(TestData.Results.ConfusionMatrix,2)
+                % [TestData.Results.GroundTruth bar] = find(TestData.Modalities{1}.ClassLabels(...
+                %                     obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices, :));
+                                
+                for iClass = 1:obj.TrainingData1Epoch.Modalities{1}.nGroundTruths                    
+                    GroundTruthClassIndices =...
+                        find(TestData.Modalities{1}.ClassLabels(...
+                            obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices(iClass),:));
                     
-                    TestData.Results.ConfusionMatrix(iGroundTruth, iPrediction) =...
-                        sum(TestData.Results.InToOutClassification(GroundTruthClassIndices) == iPrediction);
+                     TestData.Results.GroundTruth(GroundTruthClassIndices) = iClass;
                 end
+
+                TestData.Results.GroundTruth = TestData.Results.GroundTruth';
+
+                TestData.Results.ConfusionMatrix = zeros(size(unique(TestData.Results.GroundTruth),1));
+                
+                GroundTruthLabels = unique(TestData.Results.GroundTruth);
+
+                for iGroundTruth = 1:size(TestData.Results.ConfusionMatrix,1)
+
+                    GroundTruthClassIndices =...
+                        find(TestData.Results.GroundTruth == GroundTruthLabels(iGroundTruth));
+
+                    for iPrediction = 1:size(TestData.Results.ConfusionMatrix,2)
+
+                        TestData.Results.ConfusionMatrix(iGroundTruth, iPrediction) =...
+                            sum(TestData.Results.InToOutClassification(GroundTruthClassIndices) == GroundTruthLabels(iPrediction));
+                    end
+                end
+                
+            else
+                
+                TestData.Results.GroundTruth =...
+                    TestData.Modalities{1}.ClassLabels(obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices, :);
+                
             end
                             
             TestData.Results.Matches =...
