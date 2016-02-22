@@ -502,7 +502,7 @@ classdef RFLearner < Learner
 
                 TestData.Results.GroundTruth = TestData.Results.GroundTruth';
 
-                TestData.Results.ConfusionMatrix = zeros(size(unique(TestData.Results.GroundTruth),1));
+                TestData.Results.ConfusionMatrix = zeros(size(unique(TestData.Results.GroundTruth),2));
                 
                 GroundTruthLabels = unique(TestData.Results.GroundTruth);
 

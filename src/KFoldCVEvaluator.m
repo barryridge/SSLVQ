@@ -106,9 +106,19 @@ classdef KFoldCVEvaluator < Evaluator & handle
             if obj.doParallel
                 fprintf('\nOpening matlabpool...');
                 if obj.nCores == Inf
-                    matlabpool local;
+                    v = ver('matlab');
+                    if v.Version < 8.5
+                        matlabpool local;
+                    else
+                        parpool local;
+                    end
                 else
-                    matlabpool('local', obj.nCores);
+                    v = ver('matlab');
+                    if v.Version < 8.5
+                        matlabpool('local', obj.nCores);
+                    else
+                        parpool('local', obj.nCores);
+                    end
                 end
             end
             
@@ -433,7 +443,12 @@ classdef KFoldCVEvaluator < Evaluator & handle
             % Stop matlabpool...
             if obj.doParallel
                 
-                matlabpool close;
+                v = ver('matlab');
+                if v.Version < 8.5
+                    matlabpool close;
+                else
+                    delete(gcp);
+                end
                 
             end            
 
