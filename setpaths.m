@@ -31,7 +31,8 @@ addpath([ToolsRootPath '/Metrics/emd']);
 % LIBSVM...
 % http://www.csie.ntu.edu.tw/~cjlin/libsvm/
 % addpath([ToolsRootPath '/SVM/libsvm-mat-3.0-1']);
-addpath([ToolsRootPath '/SVM/libsvm-3.12/matlab']);
+% addpath([ToolsRootPath '/SVM/libsvm-3.12/matlab']);
+addpath([ToolsRootPath '/SVM/libsvm-3.20/matlab']);
 
 % Multi-Parametric Toolbox
 % http://control.ee.ethz.ch/~mpt/
@@ -67,3 +68,7 @@ addpath([ToolsRootPath '/Clustering/fkmeans']);
 % Random Forests
 % https://code.google.com/p/randomforest-matlab/
 addpath([ToolsRootPath '/Classification/randomforest-matlab/RF_Class_C']);
+
+% Random Forest by Leo
+% http://www.mathworks.com/matlabcentral/fileexchange/31036-random-forest
+addpath([ToolsRootPath '/Stochastic_Bosque']);
