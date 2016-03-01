@@ -418,9 +418,15 @@ classdef RFLearner < Learner
             
             X_tst = TestData.Modalities{1}.NormedFeatureVectors';
             
-            Y_hat = classRF_predict(X_tst, obj.Model);
+            % Class prediction using the random forests classifier
+            [Y_hat, votes] = classRF_predict(X_tst, obj.Model);
 
+            % Save classification results
             TestData.Results.InToOutClassification = Y_hat';
+            
+            % Save class scores
+            TestData.Results.InToOutScores = votes ./ repmat(sum(votes, 2), 1, size(votes,2));
+            TestData.Results.InToOutScores = TestData.Results.InToOutScores';
             
             Mask = nan(size(TestData.Modalities{1}.NormedFeatureVectors,1),1);
 
@@ -502,9 +508,9 @@ classdef RFLearner < Learner
 
                 TestData.Results.GroundTruth = TestData.Results.GroundTruth';
 
-                TestData.Results.ConfusionMatrix = zeros(size(unique(TestData.Results.GroundTruth),2));
+                TestData.Results.ConfusionMatrix = zeros(size(obj.TrainingData1Epoch.GroundTruthClassIndices,2));
                 
-                GroundTruthLabels = unique(TestData.Results.GroundTruth);
+                GroundTruthLabels = 1:obj.TrainingData1Epoch.Modalities{1}.nGroundTruths;
 
                 for iGroundTruth = 1:size(TestData.Results.ConfusionMatrix,1)
 
@@ -523,12 +529,24 @@ classdef RFLearner < Learner
                 TestData.Results.GroundTruth =...
                     TestData.Modalities{1}.ClassLabels(obj.TrainingData1Epoch.Modalities{1}.GroundTruthLabelIndices, :);
                 
+                % Calculate the confusion matrix
                 TestData.Results.ConfusionMatrix = confusionmat(TestData.Results.GroundTruth,...
                                                                 TestData.Results.InToOutClassification,...
                                                                 'order', [0,1]);
+                % 
+                % TestData.Results.Accuracy = sum(TestData.Results.ConfusionMatrix(logical(eye(2)))) /...
+                %                             length(TestData.Results.InToOutClassification);
                 
-                TestData.Results.Accuracy = sum(TestData.Results.ConfusionMatrix(logical(eye(2)))) /...
-                                            length(TestData.Results.InToOutClassification);
+                % Calculate statistics like TP, TN, F-Score, etc.
+                TestData.Results.Statistics =...
+                    confusionmatStats(TestData.Results.GroundTruth, TestData.Results.InToOutClassification);
+                
+                % Calculate ROC curve stats                
+                [rocX, rocY, ~, auc] =...
+                    perfcurve(TestData.Results.GroundTruth, TestData.Results.InToOutScores(2,:), 1);
+                TestData.Results.ROC.rocX = rocX;
+                TestData.Results.ROC.rocY = rocY;
+                TestData.Results.ROC.auc = auc;
                 
             end
                             

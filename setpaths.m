@@ -71,4 +71,8 @@ addpath([ToolsRootPath '/Classification/randomforest-matlab/RF_Class_C']);
 
 % Random Forest by Leo
 % http://www.mathworks.com/matlabcentral/fileexchange/31036-random-forest
-addpath([ToolsRootPath '/Stochastic_Bosque']);
+% addpath([ToolsRootPath '/Stochastic_Bosque']);
+
+% confusionmatStats: This function evaluates the common performance measures for classification models.
+% http://www.mathworks.com/matlabcentral/fileexchange/46035-confusionmatstats-group-grouphat-
+addpath([ToolsRootPath '/confusionmatStats']);
